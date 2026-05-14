@@ -1,0 +1,10 @@
+# Medii virtuale si cache
+.venv/
+__pycache__/
+*/__pycache__/
+
+# Setari IDE
+.idea/
+
+# Frontend (Node modules sunt generate local)
+frontend/node_modules/
