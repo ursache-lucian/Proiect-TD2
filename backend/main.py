@@ -1,6 +1,6 @@
 # main.py - Punctul de intrare al aplicației FastAPI (Student-Link Backend)
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -11,18 +11,14 @@ from contextlib import asynccontextmanager
 # Importăm modulele noastre locale
 from database import engine, get_db, Base
 import models
+import auth  # ← ADĂUGAT: modulul de autentificare
 
 # ---------------------------------------------------------------------------
-# 1. LIFESPAN - Înlocuiește vechiul @app.on_event("startup") (deprecated)
+# 1. LIFESPAN
 # ---------------------------------------------------------------------------
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Codul ÎNAINTE de 'yield' rulează la pornirea serverului.
-    Codul DUPĂ 'yield' rulează la oprirea serverului.
-    """
-    # La pornire: creăm tabelele și inserăm seed data
     Base.metadata.create_all(bind=engine)
 
     db = next(get_db())
@@ -70,44 +66,42 @@ async def lifespan(app: FastAPI):
     finally:
         db.close()
 
-    yield  # Serverul rulează aici
+    yield
 
-    # La oprire (opțional): putem închide conexiuni, etc.
     print("🛑 Serverul s-a oprit.")
 
 
 # ---------------------------------------------------------------------------
-# 2. INIȚIALIZARE APLICAȚIE (cu lifespan)
+# 2. INIȚIALIZARE APLICAȚIE
 # ---------------------------------------------------------------------------
 
 app = FastAPI(
     title="Student-Link API",
     description="Backend pentru platforma de internship-uri dedicată studenților",
     version="1.0.0",
-    lifespan=lifespan  # Legăm funcția lifespan de aplicație
+    lifespan=lifespan
 )
 
 # ---------------------------------------------------------------------------
-# 2. CORS - Permite frontend-ului React (Vite pe portul 5173) să comunice cu backend-ul
+# 3. CORS
 # ---------------------------------------------------------------------------
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],   # Portul implicit Vite/React
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
-    allow_methods=["*"],                        # GET, POST, PUT, DELETE etc.
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# ← ADĂUGAT: înregistrăm rutele de autentificare (/auth/register, /auth/login)
+app.include_router(auth.router)
+
 # ---------------------------------------------------------------------------
-# 3. SCHEME PYDANTIC - Definesc structura JSON returnată/primită de API
+# 4. SCHEME PYDANTIC
 # ---------------------------------------------------------------------------
 
 class JobSchema(BaseModel):
-    """
-    Schema pentru un job returnat de API.
-    Aceasta este structura EXACTĂ a JSON-ului pe care frontend-ul o va primi.
-    """
     id: int
     title: str
     company: str
@@ -118,52 +112,27 @@ class JobSchema(BaseModel):
     created_at: datetime
 
     class Config:
-        from_attributes = True  # Permite conversia din obiect SQLAlchemy în JSON
+        from_attributes = True
 
 
 # ---------------------------------------------------------------------------
-# 4. RUTE API
+# 5. RUTE API
 # ---------------------------------------------------------------------------
 
 @app.get("/")
 def root():
-    """Ruta de bază - confirmă că serverul rulează."""
     return {"mesaj": "Student-Link API funcționează!", "versiune": "1.0.0"}
 
 
 @app.get("/jobs", response_model=List[JobSchema])
 def get_jobs(db: Session = Depends(get_db)):
-    """
-    Returnează TOATE joburile disponibile din baza de date,
-    ordonate de la cel mai recent la cel mai vechi.
-
-    Răspuns JSON (listă de obiecte):
-    [
-        {
-            "id": 1,
-            "title": "Internship Frontend Developer",
-            "company": "Bitdefender",
-            "location": "Cluj-Napoca",
-            "description": "...",
-            "requirements": "React, HTML/CSS, ...",
-            "job_type": "internship",
-            "created_at": "2025-01-15T10:30:00"
-        },
-        ...
-    ]
-    """
     joburi = db.query(models.Job).order_by(models.Job.created_at.desc()).all()
     return joburi
 
 
 @app.get("/jobs/{job_id}", response_model=JobSchema)
 def get_job(job_id: int, db: Session = Depends(get_db)):
-    """
-    Returnează un singur job după ID.
-    Util pentru pagina de detalii a unui anunț.
-    """
     job = db.query(models.Job).filter(models.Job.id == job_id).first()
     if job is None:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Job-ul nu a fost găsit")
     return job
