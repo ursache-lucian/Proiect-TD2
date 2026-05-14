@@ -6,5 +6,8 @@ __pycache__/
 # Setari IDE
 .idea/
 
-# Frontend (Node modules sunt generate local)
+# Baza de date locala
+backend/proiect.db
+
+# Frontend
 frontend/node_modules/
