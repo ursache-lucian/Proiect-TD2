@@ -130,3 +130,72 @@ def sterge_job(
     db.commit()
 
     return {"message": "Job șters cu succes"}
+
+# ─── Schema pentru studentul returnat în lista de aplicanți ──────────────────
+
+class StudentAplicantSchema(BaseModel):
+    """Structura exactă returnată în GET /jobs/{job_id}/applicants"""
+    user_id: int
+    name: str
+    email: str
+    faculty: Optional[str] = None
+    description: Optional[str] = None
+    skills: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ─── Endpoint: GET /jobs/{job_id}/applicants ─────────────────────────────────
+
+@router.get("/jobs/{job_id}/applicants", response_model=List[StudentAplicantSchema])
+def vezi_aplicanti(
+    job_id: int,
+    companie: User = Depends(verifica_companie),
+    db: Session = Depends(get_db)
+):
+    """
+    Returnează lista studenților care au aplicat la un job specific.
+    Doar compania care a postat jobul poate vedea aplicanții.
+    """
+    # Verificăm că jobul există
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job-ul nu a fost găsit."
+        )
+
+    # Verificăm că jobul aparține companiei autentificate
+    if job.company != companie.name:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Nu poți vedea aplicanții unui job care nu îți aparține."
+        )
+
+    # Luăm toate aplicările pentru acest job
+    from models import Application
+    aplicari = db.query(Application).filter(
+        Application.job_id == job_id
+    ).all()
+
+    # Dacă nu a aplicat nimeni, returnăm listă goală
+    if not aplicari:
+        return []
+
+    # Luăm userii (studenții) care au aplicat
+    student_ids = [aplicare.student_id for aplicare in aplicari]
+    studenti = db.query(User).filter(User.id.in_(student_ids)).all()
+
+    # Construim răspunsul cu câmpurile cerute
+    return [
+        StudentAplicantSchema(
+            user_id=student.id,
+            name=student.name,
+            email=student.email,
+            faculty=student.faculty,
+            description=student.description,
+            skills=student.skills,
+        )
+        for student in studenti
+    ]
