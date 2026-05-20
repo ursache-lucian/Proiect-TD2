@@ -13,6 +13,7 @@ from database import engine, get_db, Base
 import models
 from auth import router as auth_router
 from profile import router as profile_router
+from applications import router as applications_router
 
 # ---------------------------------------------------------------------------
 # 1. LIFESPAN
@@ -98,6 +99,7 @@ app.add_middleware(
 # ← ADĂUGAT: înregistrăm rutele de autentificare (/auth/register, /auth/login)
 app.include_router(auth_router)
 app.include_router(profile_router)
+app.include_router(applications_router)
 
 # ---------------------------------------------------------------------------
 # 4. SCHEME PYDANTIC

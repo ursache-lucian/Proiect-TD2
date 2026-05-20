@@ -35,4 +35,23 @@ class Job(Base):
     requirements = Column(Text, nullable=True)
     job_type     = Column(String(100), nullable=True)  # "internship" sau "junior"
     created_at   = Column(DateTime(timezone=True), server_default=func.now())
+    from sqlalchemy import UniqueConstraint  # ← adaugă asta sus la importuri
 
+from sqlalchemy import UniqueConstraint  # ← adaugă asta sus la importuri
+
+class Application(Base):
+    """
+    Tabelul 'applications' - legătura dintre un student și un job la care a aplicat.
+    Combinația student_id + job_id este unică (nu poți aplica de două ori).
+    """
+    __tablename__ = "applications"
+
+    id         = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, nullable=False)   # id-ul userului student
+    job_id     = Column(Integer, nullable=False)   # id-ul jobului
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Constrângere: un student nu poate aplica de două ori la același job
+    __table_args__ = (
+        UniqueConstraint("student_id", "job_id", name="uq_student_job"),
+    )
