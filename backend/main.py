@@ -11,7 +11,8 @@ from contextlib import asynccontextmanager
 # Importăm modulele noastre locale
 from database import engine, get_db, Base
 import models
-import auth  # ← ADĂUGAT: modulul de autentificare
+from auth import router as auth_router
+from profile import router as profile_router
 
 # ---------------------------------------------------------------------------
 # 1. LIFESPAN
@@ -95,7 +96,8 @@ app.add_middleware(
 )
 
 # ← ADĂUGAT: înregistrăm rutele de autentificare (/auth/register, /auth/login)
-app.include_router(auth.router)
+app.include_router(auth_router)
+app.include_router(profile_router)
 
 # ---------------------------------------------------------------------------
 # 4. SCHEME PYDANTIC
