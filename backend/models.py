@@ -16,6 +16,9 @@ class User(Base):
     role       = Column(String(50), nullable=False)    # "student" sau "company"
     name       = Column(String(255), nullable=False)   # Nume student sau denumire companie
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    faculty = Column(String(255), nullable=True)
+    description = Column(Text, nullable=True)
+    skills = Column(Text, nullable=True)
 
 
 class Job(Base):
@@ -32,3 +35,4 @@ class Job(Base):
     requirements = Column(Text, nullable=True)
     job_type     = Column(String(100), nullable=True)  # "internship" sau "junior"
     created_at   = Column(DateTime(timezone=True), server_default=func.now())
+
