@@ -5,12 +5,12 @@ import JobFeed from "./pages/JobFeed";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
+import CompanyDashboard from "./pages/CompanyDashboard";
 import Navbar from "./components/Navbar";
 
 function App() {
   const [pagina, setPagina] = useState("login");
 
-  // Datele userului logat (null daca nu e logat)
   const [user, setUser] = useState(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -25,13 +25,15 @@ function App() {
   });
 
   function handleLoginSuccess(date) {
-    setUser({
+    const userDate = {
       token: date.access_token,
       name: date.name,
       role: date.role,
       user_id: date.user_id,
-    });
-    setPagina("feed");
+    };
+    setUser(userDate);
+    // Companiile merg la dashboard, studentii la feed
+    setPagina(date.role === "company" ? "dashboard" : "feed");
   }
 
   function handleRegisterSuccess() {
@@ -44,7 +46,6 @@ function App() {
     setPagina("login");
   }
 
-  // Daca userul e logat, afisam Navbar + pagina corespunzatoare
   if (user) {
     return (
       <>
@@ -55,13 +56,17 @@ function App() {
           setPagina={setPagina}
         />
 
-        {pagina === "feed" && <JobFeed user={user} />}
-        {pagina === "profile" && <Profile user={user} onLogout={handleLogout} />}
+        {/* Pagini pentru studenti */}
+        {user.role === "student" && pagina === "feed" && <JobFeed user={user} />}
+        {user.role === "student" && pagina === "profile" && <Profile user={user} onLogout={handleLogout} />}
+
+        {/* Pagini pentru companii */}
+        {user.role === "company" && pagina === "dashboard" && <CompanyDashboard user={user} onLogout={handleLogout} />}
+        {user.role === "company" && pagina === "profile" && <Profile user={user} onLogout={handleLogout} />}
       </>
     );
   }
 
-  // Daca nu e logat
   return (
     <>
       {pagina === "login" && (
