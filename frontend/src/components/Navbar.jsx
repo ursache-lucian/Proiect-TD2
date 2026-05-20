@@ -1,6 +1,6 @@
-// Navbar.jsx — bara de navigatie de sus
+// Navbar.jsx — bara de navigatie cu nume clickabil catre profil
 
-function Navbar({ user, onLogout }) {
+function Navbar({ user, onLogout, paginaCurenta, setPagina }) {
   return (
     <nav
       className="d-flex align-items-center justify-content-between px-4 py-3"
@@ -12,15 +12,42 @@ function Navbar({ user, onLogout }) {
         zIndex: 100,
       }}
     >
-      {/* Logo */}
-      <span className="fw-bold" style={{ color: "#4f46e5", fontSize: "1.2rem" }}>
+      {/* Logo — click pe el te duce la feed */}
+      <span
+        className="fw-bold"
+        onClick={() => setPagina("feed")}
+        style={{ color: "#4f46e5", fontSize: "1.2rem", cursor: "pointer" }}
+      >
         🎓 StudentLink
       </span>
 
-      {/* Dreapta: nume user + buton logout */}
+      {/* Dreapta: navigatie + logout */}
       <div className="d-flex align-items-center gap-3">
-        <span className="text-muted" style={{ fontSize: "0.9rem" }}>
-          👋 {user.name}
+
+        {/* Buton Feed */}
+        <span
+          onClick={() => setPagina("feed")}
+          style={{
+            cursor: "pointer",
+            fontSize: "0.9rem",
+            fontWeight: paginaCurenta === "feed" ? 700 : 400,
+            color: paginaCurenta === "feed" ? "#4f46e5" : "#6b7280",
+          }}
+        >
+          🏠 Joburi
+        </span>
+
+        {/* Numele userului — click te duce la profil */}
+        <span
+          onClick={() => setPagina("profile")}
+          style={{
+            cursor: "pointer",
+            fontSize: "0.9rem",
+            fontWeight: paginaCurenta === "profile" ? 700 : 400,
+            color: paginaCurenta === "profile" ? "#4f46e5" : "#374151",
+          }}
+        >
+          👤 {user.name}
           <span
             className="ms-2 badge"
             style={{ background: "#ede9fe", color: "#5b21b6", fontSize: "0.75rem" }}
@@ -29,6 +56,7 @@ function Navbar({ user, onLogout }) {
           </span>
         </span>
 
+        {/* Logout */}
         <button
           onClick={onLogout}
           className="btn btn-sm"

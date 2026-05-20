@@ -4,16 +4,14 @@ import { useState } from "react";
 import JobFeed from "./pages/JobFeed";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Profile from "./pages/Profile";
 import Navbar from "./components/Navbar";
 
 function App() {
-  // "pagina" controleaza ce vedem pe ecran: "login", "register", sau "feed"
   const [pagina, setPagina] = useState("login");
 
   // Datele userului logat (null daca nu e logat)
   const [user, setUser] = useState(() => {
-    // La pornirea aplicatiei verificam daca exista deja un token salvat
-    // Asta face ca userul sa ramana logat daca reincarca pagina
     const token = localStorage.getItem("token");
     if (token) {
       return {
@@ -26,7 +24,6 @@ function App() {
     return null;
   });
 
-  // Se apeleaza dupa un login reusit
   function handleLoginSuccess(date) {
     setUser({
       token: date.access_token,
@@ -37,29 +34,34 @@ function App() {
     setPagina("feed");
   }
 
-  // Se apeleaza dupa un register reusit — trimitem userul la login
   function handleRegisterSuccess() {
     setPagina("login");
   }
 
-  // Sterge toate datele din localStorage si revine la login
   function handleLogout() {
     localStorage.clear();
     setUser(null);
     setPagina("login");
   }
 
-  // Daca userul e deja logat, sarim direct la feed
+  // Daca userul e logat, afisam Navbar + pagina corespunzatoare
   if (user) {
     return (
       <>
-        <Navbar user={user} onLogout={handleLogout} />
-        <JobFeed user={user} />
+        <Navbar
+          user={user}
+          onLogout={handleLogout}
+          paginaCurenta={pagina}
+          setPagina={setPagina}
+        />
+
+        {pagina === "feed" && <JobFeed user={user} />}
+        {pagina === "profile" && <Profile user={user} onLogout={handleLogout} />}
       </>
     );
   }
 
-  // Daca nu e logat, afisam login sau register
+  // Daca nu e logat
   return (
     <>
       {pagina === "login" && (
