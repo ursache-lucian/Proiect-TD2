@@ -12,6 +12,8 @@ from models import Application, Job
 from profile import get_user_curent  # reutilizăm funcția de verificare token
 from models import User
 
+from notifications import creeaza_notificare
+
 router = APIRouter(tags=["Aplicări"])
 
 
@@ -71,6 +73,20 @@ def aplica_la_job(
     )
     db.add(aplicare_noua)
     db.commit()
+    from models import User as UserModel
+    companie = db.query(UserModel).filter(
+        UserModel.name == job.company,
+        UserModel.role == "company"
+    ).first()
+
+    if companie:
+        creeaza_notificare(
+            db=db,
+            user_id=companie.id,
+            message=f"Un student nou a aplicat la jobul tău: {job.title}!"
+        )
+
+    return {"message": "Ai aplicat cu succes!"}
 
     return {"message": "Ai aplicat cu succes!"}
 

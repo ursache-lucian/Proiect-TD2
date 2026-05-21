@@ -10,6 +10,8 @@ from database import get_db
 from models import Job, User
 from profile import get_user_curent
 
+from notifications import creeaza_notificare
+
 router = APIRouter(tags=["Joburi Companie"])
 
 
@@ -186,6 +188,20 @@ def vezi_aplicanti(
     # Luăm userii (studenții) care au aplicat
     student_ids = [aplicare.student_id for aplicare in aplicari]
     studenti = db.query(User).filter(User.id.in_(student_ids)).all()
+
+    #notificare vizualizare profil
+    for student in studenti:
+        creeaza_notificare(
+            db=db,
+            user_id=student.id,
+            message="O companie ți-a vizualizat profilul!"
+        )
+
+    return [
+        StudentAplicantSchema(...)
+        for student in studenti
+    ]
+
 
     # Construim răspunsul cu câmpurile cerute
     return [

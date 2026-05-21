@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime
 from sqlalchemy.sql import func
 from database import Base
+from sqlalchemy import Column, Integer, String, Text, DateTime, UniqueConstraint, Boolean
 
 
 class User(Base):
@@ -56,3 +57,15 @@ class Application(Base):
     __table_args__ = (
         UniqueConstraint("student_id", "job_id", name="uq_student_job"),
     )
+
+class Notification(Base):
+    """
+    Tabelul 'notifications' - notificările utilizatorilor.
+    """
+    __tablename__ = "notifications"
+
+    id         = Column(Integer, primary_key=True, index=True)
+    user_id    = Column(Integer, nullable=False)        # cui îi aparține notificarea
+    message    = Column(String(500), nullable=False)    # textul notificării
+    is_read    = Column(Boolean, default=False)         # citită sau nu
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
