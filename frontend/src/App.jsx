@@ -6,10 +6,14 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import CompanyDashboard from "./pages/CompanyDashboard";
+import Inbox from "./pages/Inbox";
 import Navbar from "./components/Navbar";
 
 function App() {
   const [pagina, setPagina] = useState("login");
+
+  // Cand compania apasa "Mesaj" pe un student, salvam conversatia initiala
+  const [conversatieInitiala, setConversatieInitiala] = useState(null);
 
   const [user, setUser] = useState(() => {
     const token = localStorage.getItem("token");
@@ -32,7 +36,6 @@ function App() {
       user_id: date.user_id,
     };
     setUser(userDate);
-    // Companiile merg la dashboard, studentii la feed
     setPagina(date.role === "company" ? "dashboard" : "feed");
   }
 
@@ -46,6 +49,12 @@ function App() {
     setPagina("login");
   }
 
+  // Cand schimbam pagina resetam conversatia initiala
+  function handleSetPagina(paginaNoua) {
+    if (paginaNoua !== "inbox") setConversatieInitiala(null);
+    setPagina(paginaNoua);
+  }
+
   if (user) {
     return (
       <>
@@ -53,16 +62,25 @@ function App() {
           user={user}
           onLogout={handleLogout}
           paginaCurenta={pagina}
-          setPagina={setPagina}
+          setPagina={handleSetPagina}
         />
 
         {/* Pagini pentru studenti */}
         {user.role === "student" && pagina === "feed" && <JobFeed user={user} />}
         {user.role === "student" && pagina === "profile" && <Profile user={user} onLogout={handleLogout} />}
+        {user.role === "student" && pagina === "inbox" && <Inbox user={user} onLogout={handleLogout} conversatieInitiala={conversatieInitiala} />}
 
         {/* Pagini pentru companii */}
-        {user.role === "company" && pagina === "dashboard" && <CompanyDashboard user={user} onLogout={handleLogout} />}
+        {user.role === "company" && pagina === "dashboard" && (
+          <CompanyDashboard
+            user={user}
+            onLogout={handleLogout}
+            setPagina={handleSetPagina}
+            setConversatieInitiala={setConversatieInitiala}
+          />
+        )}
         {user.role === "company" && pagina === "profile" && <Profile user={user} onLogout={handleLogout} />}
+        {user.role === "company" && pagina === "inbox" && <Inbox user={user} onLogout={handleLogout} conversatieInitiala={conversatieInitiala} />}
       </>
     );
   }
@@ -70,16 +88,10 @@ function App() {
   return (
     <>
       {pagina === "login" && (
-        <Login
-          onLoginSuccess={handleLoginSuccess}
-          navigateLaRegister={() => setPagina("register")}
-        />
+        <Login onLoginSuccess={handleLoginSuccess} navigateLaRegister={() => setPagina("register")} />
       )}
       {pagina === "register" && (
-        <Register
-          onRegisterSuccess={handleRegisterSuccess}
-          navigateLaLogin={() => setPagina("login")}
-        />
+        <Register onRegisterSuccess={handleRegisterSuccess} navigateLaLogin={() => setPagina("login")} />
       )}
     </>
   );
