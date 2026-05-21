@@ -19,6 +19,7 @@ class User(Base):
     faculty = Column(String(255), nullable=True)
     description = Column(Text, nullable=True)
     skills = Column(Text, nullable=True)
+    cv_filename = Column(String(255), nullable=True)
 
 
 class Job(Base):

@@ -113,3 +113,99 @@ def update_profil(
 
     db.commit()
     return {"message": "Profil actualizat cu succes"}
+
+#CV
+
+import os
+import shutil
+from fastapi import UploadFile, File
+from fastapi.responses import FileResponse
+
+# Folderul unde salvăm CV-urile fizic pe server
+UPLOADS_DIR = "uploads"
+os.makedirs(UPLOADS_DIR, exist_ok=True)  # creează folderul dacă nu există
+
+
+# ─── Endpoint: POST /profile/upload-cv ───────────────────────────────────────
+
+@router.post("/upload-cv")
+def upload_cv(
+    file: UploadFile = File(...),
+    user: User = Depends(get_user_curent),
+    db: Session = Depends(get_db)
+):
+    """
+    Studentul autentificat încarcă un fișier PDF ca CV.
+    Fișierul se salvează fizic în folderul /uploads.
+    Doar studenții pot accesa acest endpoint.
+    """
+    # Verificăm că userul e student
+    if user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Doar studenții pot încărca un CV."
+        )
+
+    # Verificăm că fișierul e PDF
+    if not file.filename.endswith(".pdf"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Doar fișierele PDF sunt acceptate."
+        )
+
+    # Generăm un nume unic pentru fișier: cv_{user_id}.pdf
+    # Așa fiecare student are un singur CV și îl suprascrie dacă reîncarcă
+    nume_fisier = f"cv_{user.id}.pdf"
+    cale_fisier = os.path.join(UPLOADS_DIR, nume_fisier)
+
+    # Salvăm fișierul pe server
+    with open(cale_fisier, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Salvăm numele fișierului în baza de date
+    user.cv_filename = nume_fisier
+    db.commit()
+
+    return {"message": "CV încărcat cu succes"}
+
+
+# ─── Endpoint: GET /profile/cv ───────────────────────────────────────────────
+
+@router.get("/cv")
+def download_cv(
+    user: User = Depends(get_user_curent),
+    db: Session = Depends(get_db)
+):
+    """
+    Returnează fișierul PDF al CV-ului studentului autentificat.
+    Dacă nu are CV încărcat → 404.
+    """
+    # Verificăm că userul e student
+    if user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Doar studenții au CV."
+        )
+
+    # Verificăm că studentul are un CV încărcat
+    if not user.cv_filename:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Nu ai niciun CV încărcat."
+        )
+
+    cale_fisier = os.path.join(UPLOADS_DIR, user.cv_filename)
+
+    # Verificăm că fișierul există fizic pe server
+    if not os.path.exists(cale_fisier):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Fișierul CV nu a fost găsit pe server."
+        )
+
+    # Returnăm fișierul PDF direct
+    return FileResponse(
+        path=cale_fisier,
+        media_type="application/pdf",
+        filename=f"cv_{user.name}.pdf"  # numele văzut de user la descărcare
+    )
