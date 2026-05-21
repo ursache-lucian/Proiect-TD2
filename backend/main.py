@@ -16,6 +16,7 @@ from profile import router as profile_router
 from applications import router as applications_router
 from company_jobs import router as company_jobs_router
 from notifications import router as notifications_router
+from messages import router as messages_router
 
 # ---------------------------------------------------------------------------
 # 1. LIFESPAN
@@ -104,6 +105,7 @@ app.include_router(applications_router)   # conține /jobs/applied
 app.include_router(auth_router)
 app.include_router(profile_router)
 app.include_router(notifications_router)
+app.include_router(messages_router)
 
 # ---------------------------------------------------------------------------
 # 4. SCHEME PYDANTIC

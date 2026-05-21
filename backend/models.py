@@ -69,3 +69,16 @@ class Notification(Base):
     message    = Column(String(500), nullable=False)    # textul notificării
     is_read    = Column(Boolean, default=False)         # citită sau nu
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class Message(Base):
+    """
+    Tabelul 'messages' - mesajele directe între useri.
+    """
+    __tablename__ = "messages"
+
+    id          = Column(Integer, primary_key=True, index=True)
+    sender_id   = Column(Integer, nullable=False)    # cine a trimis
+    receiver_id = Column(Integer, nullable=False)    # cine primește
+    content     = Column(Text, nullable=False)       # textul mesajului
+    is_read     = Column(Boolean, default=False)     # pentru unread_count
+    created_at  = Column(DateTime(timezone=True), server_default=func.now())
